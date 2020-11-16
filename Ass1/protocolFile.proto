@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+service CaliBasedSongsStorageSystem {
+
+  //inserting record or write a record
+  rpc Insert(Record) returns (savedResponse); //POST
+
+  //Edit Existing Record
+  rpc Update(updateRecord) returns (Confirmation); //PUT
+
+  //Remove Existing Using Record Key
+  rpc  Delete(readKey) returns (confirmation); //DELETE
+
+  //read Record with a key
+  rpc RecordRead(readKey) returns (Record); //GET
+
+  //read Record with a key and version
+  rpc KeyVersionRead(savedResponse) returns (Record);  //GET
+
+  //read files using the criteria e.g song title or artist name
+  rpc ReadByCriteria(criteria) returns (stream RecordList);  //GET
+
+}
+
+message Record{
+
+  message Song {
+    string Title =1;
+    string Genre = 2;
+    string SongPlatform =3;
+  }
+
+  message Artist {
+
+    string artistName =1;
+    bool isMember = 2;
+
+  }
+
+  string RecordName = 1;
+  string RecordDate = 2;
+  string RecordBand = 3;
+
+  //array of songs
+  repeated Song songList = 4;
+
+  //array of artist
+
+  repeated Artist artistList = 5;
+
+  string Key = 6;
+  int32 Version = 7;
+
+}
+
+//response to the client from saved record
+message savedResponse {
+  string RecordKey = 1;
+  int32 RecordVersion = 2;
+}
+
+//client updating the record
+message updateRecord{
+
+  string recordKey =1;
+  int32 recordVersion = 2;
+  Record song = 3;
+
+}
+
+//confirmation on update of record
+message Confirmation{
+  bool confirm = 1;
+}
+
+//client reading a record with a key
+message readKey{
+  string recordKey = 1;
+}
+
+//search with song title || artist name
+message criteria{
+  string Title = 1;
+  string artistName = 2;
+  string bandName = 3;
+}
+
+//message return all specified by string
+message RecordList{
+  repeated Record ListOfRecords = 1;
+}
