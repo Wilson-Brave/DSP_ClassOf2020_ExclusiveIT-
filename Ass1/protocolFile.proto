@@ -31,10 +31,8 @@ message Record{
   }
 
   message Artist {
-
     string artistName =1;
     bool isMember = 2;
-
   }
 
   string RecordName = 1;
