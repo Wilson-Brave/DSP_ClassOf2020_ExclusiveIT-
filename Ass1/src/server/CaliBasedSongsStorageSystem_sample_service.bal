@@ -1,6 +1,9 @@
+import ballerina/crypto;
 import ballerina/grpc;
+import ballerina/io;
+// import ballerina/java.arrays;
 
-listener grpc:Listener ep = new (9090);
+listener grpc:Listener EndPoint = new (9090);
 
 
 Record firsrRecord = {
@@ -34,45 +37,182 @@ Record firsrRecord = {
             {artistName: "Baaba Maal", isMember: false}
         ]
 
+
+
+
 };
 
-
-
-service CaliBasedSongsStorageSystem on ep {
+json[] MusicCollection = [];
+boolean firstTime = true;
+boolean NotFound = true;
+service CaliBasedSongsStorageSystem on EndPoint {
 
     resource function Insert(grpc:Caller caller, Record value) {
+        NotFound = true;
+        if (firstTime) {
+            // Default Object For Testing Purposes
 
-        any MusicCollection = [firsrRecord, value];
+            io:println("Enter FirstTime Loop [!]");
 
-    // Implementation goes here.
+            Record firsrRecord = {
 
-    // You should return a savedResponse
+                RecordName: "RockSoul",
+                RecordDate: "22/10/2020",
+                RecordBand: "Mumford & Sons",
+
+                songList:
+                    [
+                        {
+
+                            Title: "There will be time",
+                            Genre: "folk rock",
+                            SongPlatform: "Deezer"
+
+                        },
+                        {
+
+                            Title: "There will be Space",
+                            Genre: "folk water",
+                            SongPlatform: "Deezer"
+
+                        }
+                    ],
+
+                artistList:
+                    [
+                        {artistName: "Winston Marshall", isMember: true},
+                        {artistName: "Ben Lovett", isMember: true},
+                        {artistName: "Baaba Maal", isMember: false}
+                    ],
+
+                Key: "",
+                Version: 1
+
+            };
+
+            map<json>|error DefaultRecord = map<json>.constructFrom(firsrRecord);
+
+            if (DefaultRecord is error) {
+
+                io:println("Error Encountered Ref: Insert Method =>" + DefaultRecord.toString());
+
+            } else {
+                io:println("Defaut Hashing Has Begun [!]");
+                string DefaultRecord_hashString = DefaultRecord.toString();
+
+                byte[] DefaultRecord_hashByte = DefaultRecord_hashString.toBytes();
+
+                byte[] DefaultRecord_actualHAsh = crypto:hashMd5(DefaultRecord_hashByte);
+
+                DefaultRecord["Key"] = DefaultRecord_actualHAsh.toBase16();
+                MusicCollection.push(DefaultRecord);
+            }
+
+        // Default Object For Testing Purposes Ends
+        }
+
+        //Ensure Deafult record only runs once
+        firstTime = false;
+
+        //Record Coming From Server
+        map<json>|error InsertedRecord = map<json>.constructFrom(value);
+
+        if (InsertedRecord is error) {
+            io:println("Error Encountered Ref: Insert Method =>" + InsertedRecord.toString());
+
+        } else {
+
+            io:println("Hashing Has Begun [!]");
+            string hashString = value.toString();
+            byte[] hashByte = hashString.toBytes();
+            byte[] actualHAsh = crypto:hashMd5(hashByte);
+            InsertedRecord["Key"] = actualHAsh.toBase16();
+            int index = 0;
+            // MusicCollection.push(InsertedRecord);
+            int collectionLength = MusicCollection.length();
+
+            while (true) {
+
+                boolean isDuplicate = true;
+
+                while (index <= collectionLength && NotFound) {
+
+                    if (index == collectionLength) {
+                      break;
+                    }
+
+                    io:println("collectionLength =>", collectionLength);
+                    io:println("index =>", index);
+                    json TempRecord = MusicCollection[index];
+                    string currentHASH = <string>TempRecord.Key;                    // Error Occors here...
+                    io:println("currentHASH =>", currentHASH);
+
+                    if (currentHASH == InsertedRecord["Key"]) {
+                        io:println("Error Record Already Exisits.");
+                        isDuplicate = true;
+                        NotFound = false;
+
+                        break;
+
+                    } else {
+
+                        io:print(isDuplicate);
+                        isDuplicate = false;
+                        
+                        io:print(isDuplicate);
+                    }
+
+                    index += index + 1;
+
+                }
+
+
+                io:println("Loop Has Exited Without Error");
+                if (!isDuplicate) {
+
+                    MusicCollection.push(InsertedRecord);
+                    io:println("Success New Record Created [!]");
+
+                    break;
+                }
+
+            }
+
+
+
+
+
+        }
+
+
+
     }
-    resource function Update(grpc:Caller caller, updateRecord value) {
-    // Implementation goes here.
 
-    // You should return a Confirmation
+    resource function Update(grpc:Caller caller, updatedRecord value) {
+
+
+
     }
     resource function Delete(grpc:Caller caller, readKey value) {
-    // Implementation goes here.
 
-    // You should return a Confirmation
+
+
     }
     resource function RecordRead(grpc:Caller caller, readKey value) {
-    // Implementation goes here.
 
-    // You should return a Record
+
+
     }
     resource function KeyVersionRead(grpc:Caller caller, savedResponse value) {
-    // Implementation goes here.
 
-    // You should return a Record
+
+
     }
     @grpc:ResourceConfig {streaming: true}
     resource function ReadByCriteria(grpc:Caller caller, criteria value) {
-    // Implementation goes here.
 
-    // You should return a RecordList
+
+
     }
 }
 
@@ -130,7 +270,7 @@ public type savedResponse record {|
 
 |};
 
-public type updateRecord record {|
+public type updatedRecord record {|
     string recordKey = "";
     int recordVersion = 0;
     Record? song = ();

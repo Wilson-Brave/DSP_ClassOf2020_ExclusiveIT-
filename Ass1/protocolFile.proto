@@ -6,7 +6,7 @@ service CaliBasedSongsStorageSystem {
   rpc Insert(Record) returns (savedResponse); //POST
 
   //Edit Existing Record
-  rpc Update(updateRecord) returns (Confirmation); //PUT
+  rpc Update(updatedRecord) returns (Confirmation); //PUT
 
   //Remove Existing Using Record Key
   rpc  Delete(readKey) returns (Confirmation); //DELETE
@@ -79,7 +79,7 @@ message savedResponse {
 }
 
 
-message updateRecord{
+message updatedRecord{
 
   string recordKey =1;
   int32 recordVersion = 2;
