@@ -49,7 +49,9 @@ service CaliBasedSongsStorageSystem on EndPoint {
 
     resource function Insert(grpc:Caller caller, Record value) {
         NotFound = true;
+        string currentHASH = "";
         if (firstTime) {
+
             // Default Object For Testing Purposes
 
             io:println("Enter FirstTime Loop [!]");
@@ -97,7 +99,8 @@ service CaliBasedSongsStorageSystem on EndPoint {
                 io:println("Error Encountered Ref: Insert Method =>" + DefaultRecord.toString());
 
             } else {
-                io:println("Defaut Hashing Has Begun [!]");
+
+                // io:println("Defaut Hashing Has Begun [!]");
                 string DefaultRecord_hashString = DefaultRecord.toString();
 
                 byte[] DefaultRecord_hashByte = DefaultRecord_hashString.toBytes();
@@ -114,7 +117,7 @@ service CaliBasedSongsStorageSystem on EndPoint {
         //Ensure Deafult record only runs once
         firstTime = false;
 
-        //Record Coming From Server
+        //Record Coming From The Server
         map<json>|error InsertedRecord = map<json>.constructFrom(value);
 
         if (InsertedRecord is error) {
@@ -122,12 +125,13 @@ service CaliBasedSongsStorageSystem on EndPoint {
 
         } else {
 
-            io:println("Hashing Has Begun [!]");
+            // io:println("Hashing Has Begun [!]");
             string hashString = value.toString();
             byte[] hashByte = hashString.toBytes();
             byte[] actualHAsh = crypto:hashMd5(hashByte);
             InsertedRecord["Key"] = actualHAsh.toBase16();
             int index = 0;
+
             // MusicCollection.push(InsertedRecord);
             int collectionLength = MusicCollection.length();
 
@@ -138,28 +142,23 @@ service CaliBasedSongsStorageSystem on EndPoint {
                 while (index <= collectionLength && NotFound) {
 
                     if (index == collectionLength) {
-                      break;
+                        break;
                     }
 
-                    io:println("collectionLength =>", collectionLength);
-                    io:println("index =>", index);
                     json TempRecord = MusicCollection[index];
-                    string currentHASH = <string>TempRecord.Key;                    // Error Occors here...
-                    io:println("currentHASH =>", currentHASH);
+
+                    currentHASH = <string>TempRecord.Key;
+
 
                     if (currentHASH == InsertedRecord["Key"]) {
                         io:println("Error Record Already Exisits.");
                         isDuplicate = true;
                         NotFound = false;
-
                         break;
 
                     } else {
-
-                        io:print(isDuplicate);
                         isDuplicate = false;
-                        
-                        io:print(isDuplicate);
+
                     }
 
                     index += index + 1;
@@ -167,13 +166,31 @@ service CaliBasedSongsStorageSystem on EndPoint {
                 }
 
 
-                io:println("Loop Has Exited Without Error");
+                //    io:println("Loop Has Exited Without Error");
+
                 if (!isDuplicate) {
 
                     MusicCollection.push(InsertedRecord);
+
+                    grpc:Error? result = caller->send({Key: currentHASH, Version: 1});
+
+                    if (result is grpc:Error) {
+
+                        result = caller->sendError(404, "Bad Response [!]");
+
+                    }
+
+                    result = caller->complete();
+
+                    foreach var rec in MusicCollection {
+
+                        io:println(rec.toString());
+                        io:println();
+
+                    }
+
                     io:println("Success New Record Created [!]");
 
-                    break;
                 }
 
             }
@@ -223,7 +240,7 @@ public type Record record {|
     Song[] songList = [];
     Artist[] artistList = [];
     string Key = "";
-    int 'Version = 0;
+    int Version = 0;
 
 |};
 

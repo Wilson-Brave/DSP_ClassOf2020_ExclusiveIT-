@@ -5,6 +5,8 @@ public function main(string... args) {
 
     CaliBasedSongsStorageSystemBlockingClient blockingEp = new ("http://localhost:9090");
 
+
+    //Writting a new record to the server -- Done.
     var result = blockingEp->Insert({
 
         RecordName: "I hate Ballerina",
@@ -42,14 +44,26 @@ public function main(string... args) {
 
     if (result is grpc:Error) {
 
-        io:print("This is An Error [!] => ");
-        io:println("Your Error is => ", result.reason());
+        io:println("An Error [!] => ");
+        io:println("Your Error is => ", result);
 
     } else {
 
         io:println(result);
 
     }
+
+//Updating a Record in the server -- N/A
+
+
+//Reading a Record From the server -- N/A
+
+
+//Reading a Record From the server -- N/A
+
+
+
+
 }
 
 
