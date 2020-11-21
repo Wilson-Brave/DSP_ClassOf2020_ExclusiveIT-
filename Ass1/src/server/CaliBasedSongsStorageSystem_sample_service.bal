@@ -1,11 +1,55 @@
 import ballerina/crypto;
 import ballerina/grpc;
 import ballerina/io;
+import ballerina/log;
 // import ballerina/java.arrays;
 
 listener grpc:Listener EndPoint = new (9090);
 
+//Function declaration Start 
 
+//Closes Readable Character Channel
+function closeRc(io:ReadableCharacterChannel rc) {
+    var result = rc.close();
+    if (result is error) {
+        log:printError("Error occurred while closing character stream", err = result);
+    }
+}
+
+// Closes Writable Character Channel
+function closeWc(io:WritableCharacterChannel wc) {
+    var result = wc.close();
+    if (result is error) {
+        log:printError("Error occurred while closing character stream",
+            err = result);
+    }
+}
+
+// Writes to JSON Database
+function writeToDatabase(json content, string path) returns @tainted error? {
+io:println("Writting Has Begun");
+    io:WritableByteChannel wbc = check io:openWritableFile(path);
+    io:WritableCharacterChannel wch = new (wbc, "UTF8");
+    var result = wch.writeJson(content);
+    closeWc(wch);
+    io:println("Writting Has Concluded");
+    return result;
+}
+
+//Reads From JSON Database
+function readFromDatabase(string path) returns @tainted json|error {
+
+    io:ReadableByteChannel rbc = check io:openReadableFile(path);
+
+    io:ReadableCharacterChannel rch = new (rbc, "UTF8");
+    var  result = rch.readJson();
+    closeRc(rch);
+    return result;
+}
+
+//Function declaration Ends 
+
+//Default Record For Testing Purposes
 Record firsrRecord = {
 
     RecordName: "RockSoul",
@@ -43,20 +87,27 @@ Record firsrRecord = {
 };
 
 json[] MusicCollection = [];
+// json[] MusicCollection4rmDB = [];
+
 boolean firstTime = true;
+
 boolean NotFound = true;
+
+// string DataBaseFileLocation = ".\\src\\Database\\MusicCollection.json";
+
 service CaliBasedSongsStorageSystem on EndPoint {
 
     resource function Insert(grpc:Caller caller, Record value) {
         NotFound = true;
-        string currentHASH = "";
+        string currentHASH = "N/A";
+
         if (firstTime) {
 
             // Default Object For Testing Purposes
 
             io:println("Enter FirstTime Loop [!]");
 
-            Record firsrRecord = {
+            Record firstRecord = {
 
                 RecordName: "RockSoul",
                 RecordDate: "22/10/2020",
@@ -92,7 +143,7 @@ service CaliBasedSongsStorageSystem on EndPoint {
 
             };
 
-            map<json>|error DefaultRecord = map<json>.constructFrom(firsrRecord);
+            map<json>|error DefaultRecord = map<json>.constructFrom(firstRecord);
 
             if (DefaultRecord is error) {
 
@@ -108,13 +159,16 @@ service CaliBasedSongsStorageSystem on EndPoint {
                 byte[] DefaultRecord_actualHAsh = crypto:hashMd5(DefaultRecord_hashByte);
 
                 DefaultRecord["Key"] = DefaultRecord_actualHAsh.toBase16();
+
                 MusicCollection.push(DefaultRecord);
+
             }
 
         // Default Object For Testing Purposes Ends
+
         }
 
-        //Ensure Deafult record only runs once
+        //Ensure Default record only runs once
         firstTime = false;
 
         //Record Coming From The Server
@@ -133,6 +187,11 @@ service CaliBasedSongsStorageSystem on EndPoint {
             int index = 0;
 
             // MusicCollection.push(InsertedRecord);
+
+            // json|error Data = readFromDatabase(DataBaseFileLocation);
+            
+            // MusicCollection4rmDB = <json> Data;
+
             int collectionLength = MusicCollection.length();
 
             while (true) {
@@ -151,7 +210,10 @@ service CaliBasedSongsStorageSystem on EndPoint {
 
 
                     if (currentHASH == InsertedRecord["Key"]) {
-                        io:println("Error Record Already Exisits.");
+
+                        grpc:Error? result = caller->send({Key: InsertedRecord["Key"]});
+                        result = caller->sendError(404, "Error Record Already Exisits.");
+                        result = caller->complete();
                         isDuplicate = true;
                         NotFound = false;
                         break;
@@ -168,58 +230,89 @@ service CaliBasedSongsStorageSystem on EndPoint {
 
                 //    io:println("Loop Has Exited Without Error");
 
-                if (!isDuplicate) {
-
-                    MusicCollection.push(InsertedRecord);
-
-                    grpc:Error? result = caller->send({Key: currentHASH, Version: 1});
-
+                if (!isDuplicate) { 
+                    string hashKey =<string> InsertedRecord.Key;
+                    int RecVersion = <int> InsertedRecord.Version;
+                    savedResponse SR = {RecordKey: hashKey , RecordVersion: RecVersion };
+                    grpc:Error? result = caller->send(SR);
                     if (result is grpc:Error) {
-
-                        result = caller->sendError(404, "Bad Response [!]");
-
+                        result = caller->sendError(404, "Bad Response.\nRecord Not Added [!]");
                     }
-
+                    MusicCollection.push(InsertedRecord);
                     result = caller->complete();
-
-                    foreach var rec in MusicCollection {
-
-                        io:println(rec.toString());
-                        io:println();
-
-                    }
-
-                    io:println("Success New Record Created [!]");
+                    io:println("Success New Record Created [!]\n"); 
 
                 }
 
             }
 
-
-
-
-
         }
-
-
-
     }
 
     resource function Update(grpc:Caller caller, updatedRecord value) {
 
-
-
     }
+
+
+
     resource function Delete(grpc:Caller caller, readKey value) {
 
-
-
     }
-    resource function RecordRead(grpc:Caller caller, readKey value) {
 
 
+    resource function RecordRead(grpc:Caller caller, readKey currentHASH) {
+            var collectionLength = MusicCollection.length();
+            boolean found = false;
+            var index = 0;
 
-    }
+foreach var album in MusicCollection {
+     io:println("************************************************************");
+     io:println(album);
+     io:println("************************************************************");
+}
+
+
+                while (index <= collectionLength && !found) {
+
+                    json searchedRecord = MusicCollection[index];
+
+                    // string HASH = <string>currentHASH.Key;
+
+                    io:println("Search Query = >",currentHASH.recordKey);
+                    io:println("Searched against = >",searchedRecord.Key);
+
+                    if (currentHASH.recordKey == searchedRecord.Key) {
+                        io:println("Record Found [ !]");
+                        grpc:Error? result = caller->send(searchedRecord);
+                        result = caller->complete();
+                        found = true;
+                        index = collectionLength;
+                        break;
+                             } else {
+                                 io:println("Record Not Found [ !]");
+                        index += index + 1;
+                    }
+                }
+
+
+                //    io:println("Loop Has Exited Without Error");
+
+                if (!found) {
+
+                 grpc:Error?  result = caller->sendError(404,"Error Record Not Found.");
+                 result = caller->complete();
+                   
+                    if (result is grpc:Error) {
+
+                        result = caller->sendError(404, "Bad Response [!]");
+                    }
+
+                    
+                }
+
+            }
+
+
     resource function KeyVersionRead(grpc:Caller caller, savedResponse value) {
 
 
@@ -228,7 +321,13 @@ service CaliBasedSongsStorageSystem on EndPoint {
     @grpc:ResourceConfig {streaming: true}
     resource function ReadByCriteria(grpc:Caller caller, criteria value) {
 
+        var Title = value.Title ;
+        var artistName = value.Title ;
+        var bandName = value.Title ; 
 
+        if (Title != "" && artistName != "" && bandName != "") {
+            
+        }
 
     }
 }
@@ -261,7 +360,6 @@ public type Artist record {|
 
 public type Confirmation record {|
     boolean confirm = false;
-
 |};
 
 public type readKey record {|
