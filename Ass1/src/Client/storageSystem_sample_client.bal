@@ -5,22 +5,22 @@ public function main(string... args) {
 
     clientRqRecord album = {
 
-        date: "11/05/21",
+        date: "22/22/22",
         art: [
-                {name: "abc", member: "YES"}
+                {name: "Beetles", member: "Yes"}
             ],
-        band: "mino & Companies",
+        band: "Maximum & Companies",
         son: [
-                {title: "Memory", genre: "rap"}
+                {title: "Memories", genre: "rap"}
             ]
 
     };
-
+io:println("------------------ADD/INSERT--------------------------");
     var answer = blockingEp->addRecord(album);
     io:println(answer);
 
     RecUpdate update = {
-        hashkey: "1234",
+        hashkey: "9d736f43f4e8d38f616ae114b4aefede",
         ver: "1.1",
         Uprecord: {
             date: "11/05/20",
@@ -34,9 +34,17 @@ public function main(string... args) {
         }
 
     };
+    io:println("-----------------UPDATE---------------------------");
     var answerUpdate = blockingEp->updateRecord(update);
     io:println(answerUpdate);
 
+    RecReadKey reading = {
+        hashkey: "9d736f43f4e8d38f616ae114b4aefede"
+        };
+io:println("------------------READ--------------------------");
+    var answerreading = blockingEp->readRecord(reading);
+    io:println(answerreading);  
+    io:println("--------------------------------------------");
 }
 
 
