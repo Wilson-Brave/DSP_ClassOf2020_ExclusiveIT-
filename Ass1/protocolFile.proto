@@ -18,7 +18,7 @@ service CaliBasedSongsStorageSystem {
   rpc KeyVersionRead(savedResponse) returns (Record);  //GET
 
   //read files using the criteria
-  rpc ReadByCriteria(criteria) returns (stream RecordList);  //GET
+  rpc ReadByCriteria(criteria) returns (RecordList);  //GET
 
 }
 

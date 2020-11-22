@@ -86,13 +86,14 @@ Record firsrRecord = {
 
 };
 
-json[] MusicCollection = [];
+Record[] MusicCollection = [];
 // json[] MusicCollection4rmDB = [];
 
 boolean firstTime = true;
 
 boolean NotFound = true;
-
+// int index = 0;
+// int index2 = 0;
 // string DataBaseFileLocation = ".\\src\\Database\\MusicCollection.json";
 
 service CaliBasedSongsStorageSystem on EndPoint {
@@ -143,26 +144,17 @@ service CaliBasedSongsStorageSystem on EndPoint {
 
             };
 
-            map<json>|error DefaultRecord = map<json>.constructFrom(firstRecord);
-
-            if (DefaultRecord is error) {
-
-                io:println("Error Encountered Ref: Insert Method =>" + DefaultRecord.toString());
-
-            } else {
 
                 // io:println("Defaut Hashing Has Begun [!]");
-                string DefaultRecord_hashString = DefaultRecord.toString();
+                string firstRecord_hashString = firstRecord.toString();
 
-                byte[] DefaultRecord_hashByte = DefaultRecord_hashString.toBytes();
+                byte[] firstRecord_hashByte = firstRecord_hashString.toBytes();
 
-                byte[] DefaultRecord_actualHAsh = crypto:hashMd5(DefaultRecord_hashByte);
+                byte[] firstRecord_actualHAsh = crypto:hashMd5(firstRecord_hashByte);
 
-                DefaultRecord["Key"] = DefaultRecord_actualHAsh.toBase16();
+                firstRecord.Key = firstRecord_actualHAsh.toBase16();
 
-                MusicCollection.push(DefaultRecord);
-
-            }
+                MusicCollection.push(firstRecord);
 
         // Default Object For Testing Purposes Ends
 
@@ -172,28 +164,18 @@ service CaliBasedSongsStorageSystem on EndPoint {
         firstTime = false;
 
         //Record Coming From The Server
-        map<json>|error InsertedRecord = map<json>.constructFrom(value);
-
-        if (InsertedRecord is error) {
-            io:println("Error Encountered Ref: Insert Method =>" + InsertedRecord.toString());
-
-        } else {
+        Record InsertedRecord = value;
 
             // io:println("Hashing Has Begun [!]");
             string hashString = value.toString();
             byte[] hashByte = hashString.toBytes();
             byte[] actualHAsh = crypto:hashMd5(hashByte);
             InsertedRecord["Key"] = actualHAsh.toBase16();
-            int index = 0;
 
-            // MusicCollection.push(InsertedRecord);
-
-            // json|error Data = readFromDatabase(DataBaseFileLocation);
-            
-            // MusicCollection4rmDB = <json> Data;
 
             int collectionLength = MusicCollection.length();
-
+            var index = 0;
+             var index2 = 0;
             while (true) {
 
                 boolean isDuplicate = true;
@@ -204,7 +186,7 @@ service CaliBasedSongsStorageSystem on EndPoint {
                         break;
                     }
 
-                    json TempRecord = MusicCollection[index];
+                    Record TempRecord = MusicCollection[index];
 
                     currentHASH = <string>TempRecord.Key;
 
@@ -223,12 +205,12 @@ service CaliBasedSongsStorageSystem on EndPoint {
 
                     }
 
-                    index += index + 1;
-
+                    index = index2 + 1;
+                    index2 = index;
                 }
 
 
-                //    io:println("Loop Has Exited Without Error");
+                   io:println("Loop Has Exited Without Error");
 
                 if (!isDuplicate) { 
                     string hashKey =<string> InsertedRecord.Key;
@@ -241,12 +223,14 @@ service CaliBasedSongsStorageSystem on EndPoint {
                     MusicCollection.push(InsertedRecord);
                     result = caller->complete();
                     io:println("Success New Record Created [!]\n"); 
-
+                    break;
+                } else {
+                    break;
                 }
 
             }
 
-        }
+        
     }
 
     resource function Update(grpc:Caller caller, updatedRecord value) {
@@ -263,18 +247,22 @@ service CaliBasedSongsStorageSystem on EndPoint {
     resource function RecordRead(grpc:Caller caller, readKey currentHASH) {
             var collectionLength = MusicCollection.length();
             boolean found = false;
+            
             var index = 0;
+             var index2 = 0;
 
 foreach var album in MusicCollection {
+
      io:println("************************************************************");
      io:println(album);
      io:println("************************************************************");
+
 }
 
 
                 while (index <= collectionLength && !found) {
 
-                    json searchedRecord = MusicCollection[index];
+                    Record searchedRecord = MusicCollection[index];
 
                     // string HASH = <string>currentHASH.Key;
 
@@ -290,7 +278,10 @@ foreach var album in MusicCollection {
                         break;
                              } else {
                                  io:println("Record Not Found [ !]");
-                        index += index + 1;
+
+                    index = index2 + 1;
+                    index2 = index;
+
                     }
                 }
 
@@ -318,17 +309,31 @@ foreach var album in MusicCollection {
 
 
     }
-    @grpc:ResourceConfig {streaming: true}
+    // @grpc:ResourceConfig {streaming: true}
     resource function ReadByCriteria(grpc:Caller caller, criteria value) {
-
+        Record[] returnMusic = [];
         var Title = value.Title ;
         var artistName = value.Title ;
         var bandName = value.Title ; 
+        io:print("Search cr =>",value);
+        if (Title != "" &&  bandName != "") {
+        foreach (Record album in MusicCollection {
+            if ( album["RecordName"] == Title &&  album["RecordBand"] == bandName) {
+                io:println("****************");
 
-        if (Title != "" && artistName != "" && bandName != "") {
-            
-        }
+                io:println(album);
 
+                io:println("****************");
+                returnMusic.push(album);
+            } else {io:println("No Match[!]");}
+        }        
+
+        RecordList searchQuery = {ListOfRecords: returnMusic};
+
+        var result =caller->send(searchQuery);
+        result =caller->complete();
+io:print("Sent Complete Flag");
+                }
     }
 }
 
@@ -401,4 +406,5 @@ function getDescriptorMap() returns map<string> {
 
     };
 }
+
 
