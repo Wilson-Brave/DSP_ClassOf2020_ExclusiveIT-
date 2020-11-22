@@ -39,11 +39,8 @@ message Record{
   string RecordDate = 2;
   string RecordBand = 3;
 
-  
-
   repeated Song songList = 4;
 
-  
 
   repeated Artist artistList = 5;
 
