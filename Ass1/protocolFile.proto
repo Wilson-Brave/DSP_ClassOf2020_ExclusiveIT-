@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+service CaliBasedSongsStorageSystem {
+
+  //inserting or writing a new record
+  rpc Insert(Record) returns (savedResponse); //POST
+
+  //Edit Existing Record
+  rpc Update(updatedRecord) returns (Confirmation); //PUT
+
+  //Remove Existing Using Record Key
+  rpc  Delete(readKey) returns (Confirmation); //DELETE
+
+  //read Record using its key
+  rpc RecordRead(readKey) returns (Record); //GET
+
+  //read Record using its key and its version
+  rpc KeyVersionRead(savedResponse) returns (Record);  //GET
+
+  //read files using the criteria
+  rpc ReadByCriteria(criteria) returns (RecordList);  //GET
+
+}
+
+message Record{
+
+  message Song {
+    string Title =1;
+    string Genre = 2;
+    string SongPlatform =3;
+  }
+
+  message Artist {
+    string artistName =1;
+    bool isMember = 2;
+  }
+
+  string RecordName = 1;
+  string RecordDate = 2;
+  string RecordBand = 3;
+
+  repeated Song songList = 4;
+
+
+  repeated Artist artistList = 5;
+
+  string Key = 6;
+  int32 Version = 7;
+
+}
+
+message Confirmation{
+  bool confirm = 1;
+}
+
+
+message readKey{
+  string recordKey = 1;
+}
+
+
+message criteria{
+  string Title = 1;
+  string artistName = 2;
+  string bandName = 3;
+}
+
+
+message RecordList{
+  repeated Record ListOfRecords = 1;
+}
+
+message savedResponse {
+  string RecordKey = 1;
+  int32 RecordVersion = 2;
+}
+
+
+message updatedRecord{
+
+  string recordKey =1;
+  int32 recordVersion = 2;
+  Record song = 3;
+
+}
+
+
+

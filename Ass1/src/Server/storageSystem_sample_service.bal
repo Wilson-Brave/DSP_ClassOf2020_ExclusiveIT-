@@ -44,7 +44,7 @@ function read(string path) returns @tainted json|error {
     return result;
 }
 
-string filePath = "C:/Users/Mino/Documents/GitHub/DSP_ClassOf2020_ExclusiveIT-/Ass1/src/Database.json";
+string filePath = ".//src//Database.json";
 
 service storageSystem on ep {
 
