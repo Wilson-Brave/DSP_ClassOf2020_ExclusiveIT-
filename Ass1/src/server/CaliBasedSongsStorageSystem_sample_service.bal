@@ -234,7 +234,25 @@ service CaliBasedSongsStorageSystem on EndPoint {
     }
 
     resource function Update(grpc:Caller caller, updatedRecord value) {
+       string updateKey = value.recordKey;
+        Record[] TempMusicCollection = [];
 
+       foreach(Record album in MusicCollection ){
+           if(album.Key == updateKey ) {
+               io:println("Update Started ");
+               TempMusicCollection.push(album);
+               TempMusicCollection.push(<Record>value.song);
+               
+           } else {
+               TempMusicCollection.push(album);
+           }
+       }
+       var result = caller->send(true);
+       if (result is grpc:Error) {
+           result = caller->sendError(404, "Could Not Send Result [!]");
+       } else {
+                MusicCollection =  TempMusicCollection;
+       }
     }
 
 
