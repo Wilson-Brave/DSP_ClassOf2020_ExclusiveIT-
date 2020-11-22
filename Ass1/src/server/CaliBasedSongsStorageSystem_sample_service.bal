@@ -47,7 +47,7 @@ function readFromDatabase(string path) returns @tainted json|error {
     return result;
 }
 
-//Function declaration Ends 
+//Function declaration Ends..
 
 //Default Record For Testing Purposes
 Record firsrRecord = {
