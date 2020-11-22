@@ -3,10 +3,12 @@ import ballerina/io;
 
 
 // This Prototy  Uses a built in Array of values in order to interact with the database in place of user input
-AlbumEntries[] MyMusic = [];
+            AlbumEntries[] MyMusic = [];
+
+            CaliBasedSongsStorageSystemBlockingClient blockingEp = new ("http://localhost:9090");
 
 public function main(string... args) {
-    CaliBasedSongsStorageSystemBlockingClient blockingEp = new ("http://localhost:9090");
+    
 
 
     //Writting a new records to the server -- Done.
@@ -123,7 +125,7 @@ public function main(string... args) {
 
     };
 
-    // addNewRecord(firstRecord); // Returns Error, Record Already Exisits.
+    // firstRecord = addNewRecord(firstRecord); // Returns Error, Record Already Exisits.
 
     Record DSP2020 =
     {
@@ -171,14 +173,22 @@ public function main(string... args) {
     //Reading a Record From the Server => Key -- Done
     displayRecordSearched(theCarterV.RecordName, theCarterV.Key);
 
-    //Reading a Record From the server -- N/A
+    //Reading a Record From the server => Criteria -- Done
 
     //Read By Band Name and Record Name
     criteria SearchCriteria = {Title: TheDedication.RecordName, bandName: TheDedication.RecordBand};
     printRecordsByCriteria(SearchCriteria);
 
+    //Read By Title
+    SearchCriteria = {Title: theCarterV.RecordName};
+    printRecordsByCriteria(SearchCriteria);
 
-//Updating a Record in the server -- N/A
+    //Read By Band Name 
+    SearchCriteria = {bandName: DSP2020.RecordBand};
+    printRecordsByCriteria(SearchCriteria);
+
+
+//Updating a Record in the server -- N/A 
 
 
 }
@@ -186,7 +196,7 @@ public function main(string... args) {
 
 function addNewRecord(Record newRecord) returns Record {
 
-    CaliBasedSongsStorageSystemBlockingClient blockingEp = new ("http://localhost:9090");
+    // CaliBasedSongsStorageSystemBlockingClient blockingEp = new ("http://localhost:9090");
 
     var result = blockingEp->Insert(newRecord);
 
@@ -212,7 +222,7 @@ function addNewRecord(Record newRecord) returns Record {
 
 function printRecordsByCriteria(criteria cr) {
 
-    CaliBasedSongsStorageSystemBlockingClient blockingEp = new ("http://localhost:9090");
+    // CaliBasedSongsStorageSystemBlockingClient blockingEp = new ("http://localhost:9090");
 
     var result = blockingEp->ReadByCriteria(cr);
 
@@ -221,7 +231,9 @@ function printRecordsByCriteria(criteria cr) {
         io:println("An Error [!] => ", result.toString());
 
     } else {
+
         if (cr.Title != "" && cr.bandName != "") {
+        //Search by Band And Title
             RecordList mySearch = result[0];
             Record[] playlist = mySearch.ListOfRecords;
 
@@ -229,42 +241,48 @@ function printRecordsByCriteria(criteria cr) {
             io:println("Band Name         : ", cr.bandName);
             io:println("Record Title      : ", cr.Title);
             io:println("***********************SEARCH RESULT*************************************");
+
             foreach Record album in playlist {
-                io:println("************************************************************");
-                io:println("Searched Record Name : ", album.RecordBand);
-                io:println("Searched Record Title : ", album.RecordName);
-                io:println("Release Date : ", album.RecordDate);
-
-                io:println("\nArtist :");
-                Artist[]? artistList = album["artistList"];
-                if (artistList is Artist[]) {
-                    io:println("*********Artist List*********");
-                    foreach Artist singer in artistList {
-                        io:println("Singer Name      : ", singer.artistName);
-                        io:println("Is a Mamember    : ", singer.artistName);
-
-                    }
-                }else {io:print("No Artist List Found[!]");}
-                io:println("*************************************");
-                io:println("\nSongs :");
-                Song[]? songList = album["songList"];
-                if (songList is Song[]) {
-                    io:println("*********Song List*********");
-                    foreach Song singer in songList {
-                        io:println("Song Title         : ", singer.Title);
-                        io:println("Song Genre           : ", singer.Genre);
-                        io:println("Song SongPlatform    : ", singer.SongPlatform);
-                    }
-                } else {io:print("No TrackList Found[!]");}
-                io:println("*************************************");
-
-
-                io:println("***********************SEARCH RESULT End[!]***********************");
-
-
+                recordToString(album);
             }
 
+            io:println("***********************SEARCH RESULT End[!]***********************");
+        } 
+        
+        else if (cr.Title != "") {
+                //Search By title only
+            RecordList mySearch = result[0];
+            Record[] playlist = mySearch.ListOfRecords;
+
+            io:println("***********************SEARCH Criteria***********************************");
+            io:println("Record Title      : ", cr.Title);
+            io:println("***********************SEARCH RESULT*************************************");
+
+            foreach Record album in playlist {
+                recordToString(album);
+            }
+
+            io:println("***********************SEARCH RESULT End[!]***********************"); 
         }
+        else if (cr.bandName != "") {
+                //Search By band Name only
+            RecordList mySearch = result[0];
+            Record[] playlist = mySearch.ListOfRecords;
+
+            io:println("***********************SEARCH Criteria***********************************");
+            io:println("Record bandName      : ", cr.bandName);
+            io:println("***********************SEARCH RESULT*************************************");
+
+            foreach Record album in playlist {
+                recordToString(album);
+            }
+
+            io:println("***********************SEARCH RESULT End[!]***********************"); 
+        }
+
+
+
+
 
     }
 
@@ -328,7 +346,7 @@ function displayRecordSearched(string recordName, string RecordKey) {
 
 function readRecord(string name, readKey value) returns grpc:Error|Record {
 
-    CaliBasedSongsStorageSystemBlockingClient blockingEp = new ("http://localhost:9090");
+    // CaliBasedSongsStorageSystemBlockingClient blockingEp = new ("http://localhost:9090");
 
     var result = blockingEp->RecordRead(value);
 
@@ -365,7 +383,40 @@ function printPlaylist(AlbumEntries[] playList) {
 
 }
 
-function recordToString(Record value) {
+function recordToString(Record album) {
+
+            // foreach Record album in playlist {
+                io:println("************************************************************");
+                io:println("Searched Record Name    : ", album.RecordBand);
+                io:println("Searched Record Title   : ", album.RecordName);
+                io:println("Release Date            : ", album.RecordDate);
+                io:println("Version                 : ", album.Version);
+                io:println("Key                     : ",album.Key);
+                io:println("\n");
+                io:println("\nArtist :");
+                Artist[]? artistList = album["artistList"];
+                if (artistList is Artist[]) {
+                    io:println("*********Artist List*********");
+                    foreach Artist singer in artistList {
+                        io:println("Singer Name      : ", singer.artistName);
+                        io:println("Is a Mamember    : ", singer.isMember);
+                    }
+                }else {io:print("No Artist List Found[!]");}
+                io:println("*************************************");
+                io:println("\nSongs :");
+                Song[]? songList = album["songList"];
+                if (songList is Song[]) {
+                    io:println("**************Song List***************");
+                    foreach Song singer in songList {
+                        io:println("Song Title          : ", singer.Title);
+                        io:println("Song Genr           : ", singer.Genre);
+                        io:println("Song SongPlatform   : ", singer.SongPlatform);
+                     io:println("*************************************");        
+                    }
+                } else {io:print("No TrackList Found[!]");}
+                io:println("*******************************************************************\n");
+               
+            // }
 
 }
 

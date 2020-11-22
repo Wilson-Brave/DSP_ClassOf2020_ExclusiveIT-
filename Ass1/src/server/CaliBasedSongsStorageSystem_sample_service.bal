@@ -251,7 +251,7 @@ service CaliBasedSongsStorageSystem on EndPoint {
             var index = 0;
              var index2 = 0;
 
-foreach var album in MusicCollection {
+foreach (var album in MusicCollection) {
 
      io:println("************************************************************");
      io:println(album);
@@ -311,20 +311,30 @@ foreach var album in MusicCollection {
     }
     // @grpc:ResourceConfig {streaming: true}
     resource function ReadByCriteria(grpc:Caller caller, criteria value) {
+
         Record[] returnMusic = [];
-        var Title = value.Title ;
-        var artistName = value.Title ;
-        var bandName = value.Title ; 
-        io:print("Search cr =>",value);
+
+        string Title = value.Title ;
+        string artistName = value.artistName ;
+        string bandName = value.bandName ; 
+
+        io:println("Search cr =>",value);
+
         if (Title != "" &&  bandName != "") {
         foreach (Record album in MusicCollection {
-            if ( album["RecordName"] == Title &&  album["RecordBand"] == bandName) {
+             string RecordName = album["RecordName"];
+             string RecordBand = album["RecordBand"];
+             io:println("Searched Against RecordBand => ",album["RecordBand"]);
+             io:println("Searched Against RecordName => ",album["RecordName"]);
+            if ( RecordName== Title &&   RecordBand == bandName) {
+                io:println("Matched[!]");
                 io:println("****************");
 
                 io:println(album);
 
                 io:println("****************");
                 returnMusic.push(album);
+                break;
             } else {io:println("No Match[!]");}
         }        
 
@@ -332,8 +342,57 @@ foreach var album in MusicCollection {
 
         var result =caller->send(searchQuery);
         result =caller->complete();
-io:print("Sent Complete Flag");
+            io:print("Sent Complete Flag");
                 }
+
+        else if (Title != "") {
+           //Search By title only 
+        foreach (Record album in MusicCollection {
+             string RecordName = album["RecordName"];
+             io:println("Searched Against RecordName => ",album["RecordName"]);
+            if ( RecordName== Title ) {
+                io:println("Matched[!]");
+                io:println("****************");
+
+                io:println(album);
+
+                io:println("****************");
+                returnMusic.push(album);
+                break;
+            } else {io:println("No Match[!]");}
+        }        
+
+        RecordList searchQuery = {ListOfRecords: returnMusic};
+
+        var result =caller->send(searchQuery);
+        result =caller->complete();
+            io:print("Sent Complete Flag");
+                }
+        if (bandName != "") {
+           //Search By band Name only 
+        foreach (Record album in MusicCollection {
+             string RecordBand = album["RecordBand"];
+             io:println("Searched Against RecordName => ",album["RecordBand"]);
+            if ( RecordBand == bandName) {
+                io:println("Matched[!]");
+                io:println("****************");
+
+                io:println(album);
+
+                io:println("****************");
+                returnMusic.push(album);
+                break;
+            } else {io:println("No Match[!]");}
+        }        
+
+        RecordList searchQuery = {ListOfRecords: returnMusic};
+
+        var result =caller->send(searchQuery);
+        result =caller->complete();
+            io:print("Sent Complete Flag");
+                }
+
+
     }
 }
 
