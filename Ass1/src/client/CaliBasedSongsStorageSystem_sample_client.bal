@@ -188,54 +188,8 @@ public function main(string... args) {
     printRecordsByCriteria(SearchCriteria);
 
 
-//Updating a Record in the server -- Done
- Record theCarterV2 = {
+//Updating a Record in the server -- N/A 
 
-        RecordName: "The Carter V 2.0",
-        RecordDate: "06/24/2020",
-        RecordBand: "Young Money",
-
-        songList:
-            [
-                {
-
-                    Title: "Don't Cry",
-                    Genre: "Rap/hip Hop",
-                    SongPlatform: "Deezer"
-
-                },
-                {
-
-                    Title: "Mona Lisa",
-                    Genre: "Rap",
-                    SongPlatform: "Deezer"
-
-                }
-
-            ],
-
-        artistList:
-            [
-                {artistName: "Lil Wayne", isMember: true},
-                {artistName: "Kendrick Lamar", isMember: false},
-                {artistName: "XXXTentacion", isMember: false}
-            ],
-
-        Key: theCarterV.Key,
-        Version: theCarterV.Version + 1
-
-    };
-
-
-    updatedRecord theCarterV_Update = {
-
-        recordKey : theCarterV2.Key,
-        recordVersion:theCarterV2.Version + 1,
-        song: theCarterV2
-
-    };
-    
-    RecUpdate(theCarterV_Update);
 
 }
 
@@ -464,24 +418,6 @@ function recordToString(Record album) {
                
             // }
 
-}
-
-function RecUpdate(updatedRecord update) {
-
-   var result = blockingEp->Update(update); 
-    if (result is grpc:Error)
-    {
-        io:println(" grpc:Error Encountered ", result);
-    }else {
-        if(result[0].confirm){
-            io:println("Record Succefully Updated");
-           Record updatedSong = <Record>update.song;
-            recordToString(updatedSong);
-        } else {
-             io:println("Could not Updated Record [!]");
-        }
-        
-    }
 }
 
 public type AlbumEntries record {
